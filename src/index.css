@@ -1,0 +1,223 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * TaskPilot design tokens
+ * -----------------------
+ * Raw brand values live on :root as CSS variables. The @theme block below
+ * exposes them to Tailwind as utilities (bg-primary, text-muted-foreground,
+ * border-border, bg-selected, text-success, ...). Change a color here and it
+ * updates everywhere. TaskPilot is light-theme only for now; `dark:` is bound
+ * to a `.dark` class so the OS setting never leaks half-styled dark variants.
+ */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Brand palette */
+  --brand-primary: #7c3aed;
+  --brand-primary-hover: #6d28d9;
+  --brand-background: #faf9ff;
+  --brand-surface: #ffffff;
+  --brand-text: #1f1937;
+  --brand-text-secondary: #77718b;
+  --brand-border: #e8e3f2;
+  --brand-border-strong: #d9d2e8;
+  --brand-selected: #f3eeff;
+  --brand-hover: #f6f3fc;
+  --brand-success: #16a34a;
+  --brand-warning: #d97706;
+  --brand-danger: #dc2626;
+
+  /* Semantic tokens (shadcn/ui naming) */
+  --background: var(--brand-background);
+  --foreground: var(--brand-text);
+  --card: var(--brand-surface);
+  --card-foreground: var(--brand-text);
+  --popover: var(--brand-surface);
+  --popover-foreground: var(--brand-text);
+  --primary: var(--brand-primary);
+  --primary-hover: var(--brand-primary-hover);
+  --primary-foreground: #ffffff;
+  --secondary: var(--brand-hover);
+  --secondary-foreground: var(--brand-text);
+  --muted: var(--brand-hover);
+  --muted-foreground: var(--brand-text-secondary);
+  --accent: var(--brand-hover);
+  --accent-foreground: var(--brand-text);
+  --destructive: var(--brand-danger);
+  --border: var(--brand-border);
+  /* Form controls get a slightly firmer border so fields read as interactive */
+  --input: var(--brand-border-strong);
+  --ring: var(--brand-primary);
+
+  /* TaskPilot-specific tokens */
+  --surface: var(--brand-surface);
+  --selected: var(--brand-selected);
+  --selected-foreground: var(--brand-primary);
+  --hover: var(--brand-hover);
+  --success: var(--brand-success);
+  --warning: var(--brand-warning);
+  --danger: var(--brand-danger);
+  /* Darker text shades for status text on tinted backgrounds (WCAG AA) */
+  --success-text: #15803d;
+  --warning-text: #b45309;
+  --danger-text: #b91c1c;
+
+  /*
+   * Chart colors: one violet hue, validated (dataviz validate_palette.js) on
+   * the white surface. --chart-1 is the single-series color (5.7:1); the
+   * ordinal ramp is for ordered stacks (light end 2.7:1, monotone, one hue);
+   * --chart-muted de-emphasizes a comparison series (3.1:1). Every chart also
+   * has a table view, so no value depends on color alone.
+   */
+  --chart-1: #7c3aed;
+  --chart-ramp-1: #a78bfa;
+  --chart-ramp-2: #7c3aed;
+  --chart-ramp-3: #4c1d95;
+  --chart-muted: #968fa8;
+  --chart-grid: #efebf6;
+
+  /* Shape & elevation */
+  --radius: 0.5rem;
+  --shadow-color: 31 25 55;
+
+  /* Layout */
+  --sidebar-width: 15.625rem; /* 250px */
+  --sidebar-width-collapsed: 4rem;
+  --topbar-height: 3.5rem;
+}
+
+@theme inline {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-surface: var(--surface);
+  --color-selected: var(--selected);
+  --color-selected-foreground: var(--selected-foreground);
+  --color-hover: var(--hover);
+  --color-success: var(--success);
+  --color-success-text: var(--success-text);
+  --color-warning: var(--warning);
+  --color-warning-text: var(--warning-text);
+  --color-danger: var(--danger);
+  --color-danger-text: var(--danger-text);
+
+  /* Radius scale derived from one base value */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Soft, low-contrast shadows tinted with the text color */
+  --shadow-xs: 0 1px 2px 0 rgb(var(--shadow-color) / 0.04);
+  --shadow-sm: 0 1px 3px 0 rgb(var(--shadow-color) / 0.06), 0 1px 2px -1px rgb(var(--shadow-color) / 0.04);
+  --shadow-md: 0 4px 12px -2px rgb(var(--shadow-color) / 0.08), 0 2px 4px -2px rgb(var(--shadow-color) / 0.04);
+  --shadow-lg: 0 16px 40px -8px rgb(var(--shadow-color) / 0.14), 0 4px 12px -4px rgb(var(--shadow-color) / 0.06);
+
+  /* Restrained type scale: 12 / 13 / 14 / 16 / 18 / 20 / 24 */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background font-sans text-sm text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-semibold tracking-tight text-foreground;
+  }
+
+  h1 {
+    @apply text-xl;
+  }
+
+  h2 {
+    @apply text-base;
+  }
+
+  h3 {
+    @apply text-sm;
+  }
+
+  ::selection {
+    @apply bg-selected text-foreground;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/*
+ * Decorative 1px line grid for hero sections. Override --grid-size or
+ * --grid-line per use (e.g. white lines on the primary CTA banner).
+ */
+@utility bg-grid {
+  --grid-size: 40px;
+  --grid-line: var(--brand-border);
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+  background-position: center top;
+}
+
+/* Shared focus ring: 3px primary halo at 70% (3.3:1 on surface, meets WCAG 1.4.11) */
+@utility focus-ring {
+  @apply outline-none focus-visible:ring-[3px] focus-visible:ring-ring/70;
+}
