@@ -2,6 +2,7 @@
  * Project model shared by the UI, the mock data source and the DRF services.
  *
  * @typedef {"on_track"|"at_risk"|"off_track"|"planning"|"completed"} ProjectStatus
+ * @typedef {"planning"|"design"|"development"|"testing"|"completed"} ProjectPhase
  * @typedef {"workspace"|"private"} ProjectVisibility
  *
  * @typedef {object} IssueCounts  computed by the API from real issues
@@ -19,6 +20,8 @@
  * @property {string} name
  * @property {string} description
  * @property {ProjectStatus} status
+ * @property {ProjectPhase} phase
+ * @property {string|null} targetDate
  * @property {ProjectVisibility} visibility
  * @property {string|null} leadId
  * @property {string[]} memberIds
@@ -30,11 +33,19 @@
  */
 
 export const PROJECT_STATUSES = [
-  { value: "on_track", label: "On track", variant: "success" },
-  { value: "at_risk", label: "At risk", variant: "warning" },
-  { value: "off_track", label: "Off track", variant: "danger" },
-  { value: "planning", label: "Planning", variant: "neutral" },
-  { value: "completed", label: "Completed", variant: "primary" },
+  { value: "on_track", label: "On track", variant: "success", description: "Progressing as scheduled" },
+  { value: "at_risk", label: "At risk", variant: "warning", description: "Behind schedule or needs attention" },
+  { value: "off_track", label: "Off track", variant: "danger", description: "Significantly delayed or blocked" },
+  { value: "planning", label: "Planning", variant: "neutral", description: "Initial scoping and alignment" },
+  { value: "completed", label: "Completed", variant: "primary", description: "Work is finished and delivered" },
+]
+
+export const PROJECT_PHASES = [
+  { value: "planning", label: "Planning", step: 1, description: "Defining scope, requirements and goals" },
+  { value: "design", label: "Design", step: 2, description: "UI/UX, system architecture and specs" },
+  { value: "development", label: "Development", step: 3, description: "Active coding and sprint execution" },
+  { value: "testing", label: "Testing", step: 4, description: "Quality assurance, review and bug fixes" },
+  { value: "completed", label: "Completed", step: 5, description: "Launched and signed off" },
 ]
 
 export const PROJECT_VISIBILITY = [
@@ -69,6 +80,8 @@ export function projectFromApi(data) {
     name: data.name,
     description: data.description ?? "",
     status: data.status,
+    phase: data.phase ?? "planning",
+    targetDate: data.target_date ?? null,
     visibility: data.visibility,
     leadId: data.lead == null ? null : String(data.lead.id ?? data.lead),
     memberIds: (data.members ?? []).map((m) => String(m.id ?? m)),
@@ -89,7 +102,16 @@ export function projectFromApi(data) {
 
 /** Partial project → DRF payload; only fields present are sent. */
 export function projectToApi(values) {
-  const fields = { name: "name", key: "key", description: "description", visibility: "visibility", status: "status", leadId: "lead" }
+  const fields = {
+    name: "name",
+    key: "key",
+    description: "description",
+    visibility: "visibility",
+    status: "status",
+    phase: "phase",
+    targetDate: "target_date",
+    leadId: "lead",
+  }
   const payload = {}
   for (const [field, apiField] of Object.entries(fields)) {
     if (field in values) payload[apiField] = values[field]
@@ -105,5 +127,8 @@ export const projectApiFieldMap = {
   key: "key",
   description: "description",
   visibility: "visibility",
+  status: "status",
+  phase: "phase",
+  targetDate: "target_date",
   lead: "leadId",
 }

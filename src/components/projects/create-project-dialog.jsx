@@ -23,11 +23,12 @@ import {
 } from "@/components/ui/dialog"
 import { FormField } from "@/components/ui/form-field"
 import { Input } from "@/components/ui/input"
+import { NativeSelect } from "@/components/ui/native-select"
 import { Textarea } from "@/components/ui/textarea"
 import { applyFieldErrors, parseApiError } from "@/lib/api-errors"
 import { paths } from "@/lib/routes"
 import { cn } from "@/lib/utils"
-import { PROJECT_VISIBILITY, projectApiFieldMap, suggestProjectKey } from "@/models/project"
+import { PROJECT_PHASES, PROJECT_STATUSES, PROJECT_VISIBILITY, projectApiFieldMap, suggestProjectKey } from "@/models/project"
 import { PERMS } from "@/models/roles"
 import { projectFormSchema } from "@/validation/issue-schemas"
 
@@ -89,7 +90,16 @@ export function CreateProjectDialog({ children }) {
     resolver: zodResolver(projectFormSchema),
     mode: "onSubmit",
     reValidateMode: "onChange",
-    defaultValues: { name: "", key: "", description: "", visibility: "workspace", leadId: "" },
+    defaultValues: {
+      name: "",
+      key: "",
+      description: "",
+      visibility: "workspace",
+      status: "planning",
+      phase: "planning",
+      targetDate: "",
+      leadId: "",
+    },
   })
   const {
     register,
@@ -105,7 +115,16 @@ export function CreateProjectDialog({ children }) {
   function handleOpenChange(next) {
     setOpen(next)
     if (next) {
-      reset({ name: "", key: "", description: "", visibility: "workspace", leadId: me?.id ?? "" })
+      reset({
+        name: "",
+        key: "",
+        description: "",
+        visibility: "workspace",
+        status: "planning",
+        phase: "planning",
+        targetDate: "",
+        leadId: me?.id ?? "",
+      })
       setKeyEdited(false)
       setFormError(null)
     }
@@ -114,7 +133,10 @@ export function CreateProjectDialog({ children }) {
   async function onSubmit(values) {
     setFormError(null)
     try {
-      const project = await createProject.mutateAsync(values)
+      const project = await createProject.mutateAsync({
+        ...values,
+        targetDate: values.targetDate || null,
+      })
       setOpen(false)
       toast.success(`${project.name} created`)
       navigate(paths.project(project.id))
@@ -135,10 +157,10 @@ export function CreateProjectDialog({ children }) {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Create project</DialogTitle>
-          <DialogDescription>Projects group related issues, boards and people.</DialogDescription>
+          <DialogDescription>Projects group related issues, lifecycle phases, boards and people.</DialogDescription>
         </DialogHeader>
 
-        <form id="create-project-form" className="grid gap-5" onSubmit={handleSubmit(onSubmit)} noValidate>
+        <form id="create-project-form" className="grid gap-4" onSubmit={handleSubmit(onSubmit)} noValidate>
           {formError && <Alert variant="danger">{formError}</Alert>}
 
           <FormField id="project-name" label="Name" error={errors.name?.message}>
@@ -174,6 +196,54 @@ export function CreateProjectDialog({ children }) {
             />
           </FormField>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <FormField id="project-phase" label="Initial Phase" error={errors.phase?.message}>
+              <NativeSelect {...register("phase")}>
+                {PROJECT_PHASES.map((ph) => (
+                  <option key={ph.value} value={ph.value}>
+                    {ph.step}. {ph.label}
+                  </option>
+                ))}
+              </NativeSelect>
+            </FormField>
+
+            <FormField id="project-status" label="Initial Status" error={errors.status?.message}>
+              <NativeSelect {...register("status")}>
+                {PROJECT_STATUSES.map((st) => (
+                  <option key={st.value} value={st.value}>
+                    {st.label}
+                  </option>
+                ))}
+              </NativeSelect>
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <FormField id="project-target-date" label="Target Date" error={errors.targetDate?.message} hint="Optional deadline">
+              <Input type="date" {...register("targetDate")} />
+            </FormField>
+
+            <FormField id="project-lead" label="Project lead" error={errors.leadId?.message}>
+              {(controlProps) => (
+                <Controller
+                  control={control}
+                  name="leadId"
+                  render={({ field }) => (
+                    <MemberSelect
+                      {...controlProps}
+                      label="Project lead"
+                      noneLabel="Choose a lead"
+                      allowNone={false}
+                      value={field.value || null}
+                      onChange={field.onChange}
+                      members={members}
+                    />
+                  )}
+                />
+              )}
+            </FormField>
+          </div>
+
           <FormField id="project-description" label="Description" error={errors.description?.message} hint="Optional">
             <Textarea rows={3} maxLength={500} placeholder="What is this project about?" {...register("description")} />
           </FormField>
@@ -183,26 +253,6 @@ export function CreateProjectDialog({ children }) {
             name="visibility"
             render={({ field }) => <VisibilityField value={field.value} onChange={field.onChange} name="project-visibility" />}
           />
-
-          <FormField id="project-lead" label="Project lead" error={errors.leadId?.message}>
-            {(controlProps) => (
-              <Controller
-                control={control}
-                name="leadId"
-                render={({ field }) => (
-                  <MemberSelect
-                    {...controlProps}
-                    label="Project lead"
-                    noneLabel="Choose a lead"
-                    allowNone={false}
-                    value={field.value || null}
-                    onChange={field.onChange}
-                    members={members}
-                  />
-                )}
-              />
-            )}
-          </FormField>
         </form>
 
         <DialogFooter>

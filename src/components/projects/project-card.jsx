@@ -1,13 +1,15 @@
+import { Calendar } from "lucide-react"
 import { Link } from "react-router"
 
 import { useMemberMap } from "@/api/hooks"
-import { PrivateBadge, ProjectStatusBadge, ProjectTile } from "@/components/projects/project-tile"
+import { PrivateBadge, ProjectPhaseBadge, ProjectStatusBadge, ProjectTile } from "@/components/projects/project-tile"
 import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { UserAvatar } from "@/components/user-avatar"
+import { formatDate } from "@/lib/dates"
 import { paths } from "@/lib/routes"
-import { formatRelativeTime } from "@/lib/utils"
+import { cn, formatRelativeTime } from "@/lib/utils"
 import { projectProgress } from "@/models/project"
 
 function ProjectMembers({ memberIds, max = 4 }) {
@@ -41,24 +43,42 @@ function ProgressSummary({ project }) {
   )
 }
 
-/** Grid card: name, key, status, description, progress and members. */
+/** Grid card: name, key, status, phase, description, progress and members. */
 export function ProjectCard({ project }) {
+  const isCompleted = project.status === "completed" || project.phase === "completed"
+
   return (
     <Link
       to={paths.project(project.id)}
-      className="focus-ring group flex h-full flex-col gap-4 rounded-lg border bg-card p-5 shadow-xs transition-[border-color,box-shadow] hover:border-input hover:shadow-sm"
+      className={cn(
+        "focus-ring group flex h-full flex-col gap-3.5 rounded-lg border bg-card p-5 shadow-xs transition-[border-color,box-shadow] hover:border-input hover:shadow-sm",
+        isCompleted && "bg-muted/10 border-emerald-500/30"
+      )}
     >
       <div className="flex items-start gap-3">
         <ProjectTile label={project.key} />
         <div className="min-w-0 flex-1">
-          <h3 className="truncate group-hover:text-primary">{project.name}</h3>
+          <h3 className="truncate group-hover:text-primary text-base font-semibold">{project.name}</h3>
           <p className="font-mono text-xs text-muted-foreground">{project.key}</p>
         </div>
         <ProjectStatusBadge status={project.status} />
       </div>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        <ProjectPhaseBadge phase={project.phase} />
+        {project.targetDate && (
+          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Calendar className="size-3" aria-hidden="true" />
+            {formatDate(project.targetDate)}
+          </span>
+        )}
+      </div>
+
       <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">{project.description || "No description yet."}</p>
+      
       <ProgressSummary project={project} />
-      <div className="mt-auto flex items-center justify-between gap-2">
+
+      <div className="mt-auto flex items-center justify-between gap-2 pt-1 border-t border-border/50">
         <ProjectMembers memberIds={project.memberIds} />
         <div className="flex items-center gap-2">
           {project.visibility === "private" && <PrivateBadge />}
@@ -76,11 +96,15 @@ export function ProjectListRow({ project }) {
   const memberMap = useMemberMap()
   const lead = memberMap[project.leadId]
   const progress = projectProgress(project)
+  const isCompleted = project.status === "completed" || project.phase === "completed"
 
   return (
     <Link
       to={paths.project(project.id)}
-      className="focus-ring group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 transition-colors hover:bg-hover sm:px-5 md:grid-cols-[minmax(0,2fr)_9rem_minmax(0,1fr)_7rem] lg:grid-cols-[minmax(0,2fr)_9rem_minmax(0,1fr)_6rem_7rem]"
+      className={cn(
+        "focus-ring group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 transition-colors hover:bg-hover sm:px-5 md:grid-cols-[minmax(0,2fr)_9rem_minmax(0,1fr)_7rem] lg:grid-cols-[minmax(0,2fr)_9rem_minmax(0,1fr)_8rem_12rem]",
+        isCompleted && "bg-muted/10"
+      )}
     >
       <span className="flex min-w-0 items-center gap-3">
         <ProjectTile label={project.key} />
@@ -91,9 +115,11 @@ export function ProjectListRow({ project }) {
           </span>
           <span className="block truncate text-xs text-muted-foreground">
             <span className="font-mono">{project.key}</span> · updated {formatRelativeTime(project.updatedAt)}
+            {project.targetDate && ` · Target ${formatDate(project.targetDate)}`}
           </span>
         </span>
       </span>
+
       <span className="hidden min-w-0 items-center gap-2 md:flex">
         {lead ? (
           <>
@@ -104,14 +130,17 @@ export function ProjectListRow({ project }) {
           <span className="text-sm text-muted-foreground">No lead</span>
         )}
       </span>
+
       <span className="hidden items-center gap-3 md:flex">
         <Progress value={progress} label={`${project.name} progress`} className="flex-1" />
         <span className="w-9 text-right text-xs tabular-nums text-muted-foreground">{progress == null ? "–" : `${progress}%`}</span>
       </span>
-      <span className="hidden lg:block">
-        <ProjectMembers memberIds={project.memberIds} max={3} />
+
+      <span className="hidden lg:flex items-center gap-1.5">
+        <ProjectPhaseBadge phase={project.phase} />
       </span>
-      <span className="justify-self-end">
+
+      <span className="flex items-center justify-end gap-2">
         <ProjectStatusBadge status={project.status} />
       </span>
     </Link>
@@ -154,28 +183,34 @@ export function ProjectGrid({ projects, isPending, limit }) {
 export function ProjectListView({ projects, isPending }) {
   return (
     <div className="overflow-hidden rounded-lg border bg-card shadow-xs" aria-busy={isPending || undefined}>
-      <div className="hidden grid-cols-[minmax(0,2fr)_9rem_minmax(0,1fr)_7rem] gap-4 border-b bg-background/60 px-5 py-2 text-xs font-medium text-muted-foreground md:grid lg:grid-cols-[minmax(0,2fr)_9rem_minmax(0,1fr)_6rem_7rem]" aria-hidden="true">
+      <div className="hidden border-b bg-muted/40 px-5 py-2.5 text-xs font-medium text-muted-foreground md:grid md:grid-cols-[minmax(0,2fr)_9rem_minmax(0,1fr)_7rem] lg:grid-cols-[minmax(0,2fr)_9rem_minmax(0,1fr)_8rem_12rem] gap-4">
         <span>Project</span>
         <span>Lead</span>
         <span>Progress</span>
-        <span className="hidden lg:block">Members</span>
+        <span className="hidden lg:block">Phase</span>
         <span className="text-right">Status</span>
       </div>
-      <ul className="divide-y" aria-label="Projects">
-        {isPending
-          ? Array.from({ length: 4 }, (_, index) => (
-              <li key={index} className="flex items-center gap-3 px-5 py-4">
-                <Skeleton className="size-7" />
-                <Skeleton className="h-3 w-48" />
-                <Skeleton className="ml-auto h-5 w-20 rounded-full" />
-              </li>
-            ))
-          : projects.map((project) => (
-              <li key={project.id}>
-                <ProjectListRow project={project} />
-              </li>
-            ))}
-      </ul>
+      {isPending ? (
+        <div className="divide-y">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className="flex items-center gap-4 p-4">
+              <Skeleton className="size-8 rounded-md" />
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <ul className="divide-y">
+          {projects?.map((project) => (
+            <li key={project.id}>
+              <ProjectListRow project={project} />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

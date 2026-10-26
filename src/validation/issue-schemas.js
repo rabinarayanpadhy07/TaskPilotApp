@@ -29,9 +29,21 @@ export const issueFormSchema = z
 export const projectFormSchema = z.object({
   name: z.string().trim().min(2, "Enter a project name of at least 2 characters.").max(80, "Use 80 characters or fewer."),
   key: z.string().regex(PROJECT_KEY_PATTERN, "Use 2–10 uppercase letters or digits, starting with a letter."),
-  description: z.string().max(500, "Use 500 characters or fewer."),
+  description: z.string().max(500, "Use 500 characters or fewer.").optional(),
   visibility: z.enum(["workspace", "private"]),
+  status: z.enum(["on_track", "at_risk", "off_track", "planning", "completed"]).default("planning"),
+  phase: z.enum(["planning", "design", "development", "testing", "completed"]).default("planning"),
+  targetDate: z.string().nullable().optional(),
   leadId: z.string({ error: "Choose a project lead." }).min(1, "Choose a project lead."),
+})
+
+export const projectEditSchema = z.object({
+  name: z.string().trim().min(2, "Enter a project name of at least 2 characters.").max(80, "Use 80 characters or fewer."),
+  description: z.string().max(500, "Use 500 characters or fewer.").optional(),
+  status: z.enum(["on_track", "at_risk", "off_track", "planning", "completed"]),
+  phase: z.enum(["planning", "design", "development", "testing", "completed"]),
+  targetDate: z.string().nullable().optional(),
+  leadId: z.string().min(1, "Choose a project lead.").optional(),
 })
 
 export const commentSchema = z.object({

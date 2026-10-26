@@ -17,7 +17,7 @@ import { CreateIssueDialog } from "@/components/issues/issue-form"
 import { DueDate, IssueList, IssueListSkeleton, IssueRow } from "@/components/issues/issue-row"
 import { PageHeader } from "@/components/page-header"
 import { CreateProjectDialog } from "@/components/projects/create-project-dialog"
-import { ProjectTile } from "@/components/projects/project-tile"
+import { ProjectPhaseBadge, ProjectTile } from "@/components/projects/project-tile"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Progress } from "@/components/ui/progress"
@@ -97,7 +97,10 @@ function ProjectProgressList({ projects }) {
               <ProjectTile label={project.key} />
               <div className="grid grid-cols-1 min-w-0 flex-1 gap-1.5">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="truncate text-sm font-medium group-hover:text-primary">{project.name}</span>
+                  <span className="flex items-center gap-2 truncate">
+                    <span className="truncate text-sm font-medium group-hover:text-primary">{project.name}</span>
+                    <ProjectPhaseBadge phase={project.phase} className="hidden sm:inline-flex text-[10px] h-4 py-0" />
+                  </span>
                   <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                     {total === 0 ? "No issues" : `${done}/${total} done`}
                     {overdue > 0 && <span className="text-danger-text"> · {overdue} overdue</span>}

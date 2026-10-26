@@ -1,8 +1,8 @@
-import { Lock } from "lucide-react"
+import { CheckCheck, CheckCircle2, ClipboardList, Code2, Lock, Palette } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { PROJECT_STATUSES } from "@/models/project"
+import { PROJECT_PHASES, PROJECT_STATUSES } from "@/models/project"
 
 const tileSizes = {
   sm: "size-5 rounded-[5px] text-[10px]",
@@ -32,11 +32,40 @@ export function ProjectTile({ label, size = "default", className }) {
 
 const statusConfig = Object.fromEntries(PROJECT_STATUSES.map((s) => [s.value, s]))
 
-export function ProjectStatusBadge({ status }) {
+export function ProjectStatusBadge({ status, className }) {
   const config = statusConfig[status] ?? statusConfig.planning
   return (
-    <Badge variant={config.variant} dot>
+    <Badge variant={config.variant} dot className={className}>
       {config.label}
+    </Badge>
+  )
+}
+
+const phaseIcons = {
+  planning: ClipboardList,
+  design: Palette,
+  development: Code2,
+  testing: CheckCircle2,
+  completed: CheckCheck,
+}
+
+const phaseVariants = {
+  planning: "neutral",
+  design: "outline",
+  development: "primary",
+  testing: "warning",
+  completed: "success",
+}
+
+export function ProjectPhaseBadge({ phase, className, showIcon = true }) {
+  const p = PROJECT_PHASES.find((item) => item.value === phase) ?? PROJECT_PHASES[0]
+  const Icon = phaseIcons[p.value] ?? ClipboardList
+  const variant = phaseVariants[p.value] ?? "neutral"
+
+  return (
+    <Badge variant={variant} className={cn("gap-1.5 font-normal", className)} title={`Phase: ${p.label} - ${p.description}`}>
+      {showIcon && <Icon className="size-3" aria-hidden="true" />}
+      <span>Phase: {p.label}</span>
     </Badge>
   )
 }

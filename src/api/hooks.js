@@ -550,9 +550,45 @@ export const useUpdateProjectMember = (projectId) =>
 export const useRemoveProjectMember = (projectId) =>
   useProjectAccessMutation(projectId, (ws, id, userId) => dataSource.removeProjectMember(ws, id, userId))
 
-/** Variables: partial project ({ visibility }, { name }, ...) */
-export const useUpdateProject = (projectId) =>
-  useProjectAccessMutation(projectId, (ws, id, patch) => dataSource.updateProject(ws, id, patch))
+/** Variables: partial project ({ visibility }, { name }, { status }, { phase }, ...) */
+export function useUpdateProject(projectId) {
+  const queryClient = useQueryClient()
+  const workspaceId = useWorkspaceId()
+  const projectsKey = queryKeys.projects(workspaceId)
+
+  return useMutation({
+    mutationFn: (patch) => dataSource.updateProject(workspaceId, projectId, patch),
+    onMutate: async (patch) => {
+      await queryClient.cancelQueries({ queryKey: projectsKey })
+      const previousProjects = queryClient.getQueryData(projectsKey)
+      queryClient.setQueryData(projectsKey, (old) => {
+        if (!Array.isArray(old)) return old
+        return old.map((proj) =>
+          proj.id === String(projectId)
+            ? {
+                ...proj,
+                ...patch,
+                updatedAt: new Date().toISOString(),
+              }
+            : proj
+        )
+      })
+      return { previousProjects }
+    },
+    onError: (_err, _patch, context) => {
+      if (context?.previousProjects) {
+        queryClient.setQueryData(projectsKey, context.previousProjects)
+      }
+    },
+    onSettled: () => {
+      invalidate(queryClient, [
+        queryKeys.projects(workspaceId),
+        queryKeys.projectMembers(workspaceId, projectId),
+        queryKeys.reportsRoot(workspaceId),
+      ])
+    },
+  })
+}
 
 // ---------- Reports ----------
 
