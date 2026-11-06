@@ -28,10 +28,17 @@ export function parseApiError(error, fallback = "Something went wrong. Please tr
 
   // Vite's dev proxy answers 5xx with a non-JSON body when Django isn't running
   if (status >= 500) {
+    const detailMessage =
+      data && typeof data === "object"
+        ? data.detail || (Array.isArray(data.non_field_errors) ? data.non_field_errors.join(" ") : null)
+        : null
+
     return {
-      message: import.meta.env.DEV
-        ? `The TaskPilot API isn't responding (HTTP ${status}). Make sure the Django server is running.`
-        : "Something went wrong on our side. Please try again in a moment.",
+      message:
+        detailMessage ||
+        (import.meta.env.DEV
+          ? `The TaskPilot API isn't responding (HTTP ${status}). Make sure the Django server is running.`
+          : "Something went wrong on our side. Please try again in a moment."),
       fieldErrors: {},
       status,
       isNetworkError: status === 502 || status === 503 || status === 504,
